@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image to ASCII Art Convertor</title>
+    <link href="https://unpkg.com/tailwindcss@^1.0/dist/tailwind.min.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="px-4 py-16 mx-auto sm:max-w-xl md:max-w-full lg:max-w-screen-xl md:px-24 lg:px-8 lg:py-20">
+        <div class="max-w-xl mb-10 md:mx-auto sm:text-center lg:max-w-6xl md:mb-12">
+            <div>
+                <p
+                    class="inline-block px-3 py-px mb-4 text-xs font-semibold tracking-wider text-teal-900 uppercase rounded-full bg-teal-accent-400">
+                    tiny tools.
+                </p>
+            </div>
+            <h2
+                class="max-w-lg mb-6 font-sans text-3xl font-bold leading-none tracking-tight text-gray-900 sm:text-4xl md:mx-auto">
+                <span class="relative inline-block">
+                    <svg viewBox="0 0 52 24" fill="currentColor"
+                        class="absolute top-0 left-0 z-0 hidden w-32 -mt-8 -ml-20 text-blue-gray-100 lg:w-32 lg:-ml-28 lg:-mt-10 sm:block">
+                        <defs>
+                            <pattern id="679d5905-e08c-4b91-a66c-84aefbb9d2f5" x="0" y="0" width=".135" height=".30">
+                                <circle cx="1" cy="1" r=".7"></circle>
+                            </pattern>
+                        </defs>
+                        <rect fill="url(#679d5905-e08c-4b91-a66c-84aefbb9d2f5)" width="52" height="24"></rect>
+                    </svg>
+                    <span class="relative">Image</span>
+                </span>
+                to ASCII Art
+            </h2>
+            <p class="text-base text-gray-700 md:text-lg">
+                Convert any image to <a href="https://en.wikipedia.org/wiki/ASCII_art" class="text-yellow-900"
+                    target="_blank">ASCII art</a> at one click.
+            </p>
+
+            <div class="flex w-full mt-10 items-center justify-center bg-grey-lighter">
+                <label
+                    class="w-64 flex flex-col items-center px-4 py-6 bg-white text-blue rounded-lg shadow-lg tracking-wide uppercase border border-blue cursor-pointer hover:bg-blue hover:text-blue">
+                    <svg class="w-8 h-8" fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                        <path
+                            d="M16.88 9.1A4 4 0 0 1 16 17H5a5 5 0 0 1-1-9.9V7a3 3 0 0 1 4.52-2.59A4.98 4.98 0 0 1 17 8c0 .38-.04.74-.12 1.1zM11 11h3l-4-4-4 4h3v3h2v-3z" />
+                    </svg>
+                    <span class="mt-2 text-base leading-normal">Select a file</span>
+                    <input type='file' class="hidden" id="picture" />
+                </label>
+            </div>
+
+            <div class="container my-12 mx-auto px-4 md:px-12">
+                <div class="flex flex-wrap -mx-1 lg:-mx-4">
+                    <canvas id="preview" style="display: none;"></canvas>
+                    <pre id="ascii"></pre>
+
+                </div>
+            </div>
+
+
+        </div>
+    </div>
+
+    <script>
+        const MAXIMUM_WIDTH = 100;
+        const MAXIMUM_HEIGHT = 100;
+
+        const clampDimensions = (width, height) => {
+            const rectifiedWidth = Math.floor(getFontRatio() * width);
+
+            if (height > MAXIMUM_HEIGHT) {
+                const reducedWidth = Math.floor(rectifiedWidth * MAXIMUM_HEIGHT / height);
+                return [reducedWidth, MAXIMUM_HEIGHT];
+            }
+
+            if (width > MAXIMUM_WIDTH) {
+                const reducedHeight = Math.floor(height * MAXIMUM_WIDTH / rectifiedWidth);
+                return [MAXIMUM_WIDTH, reducedHeight];
+            }
+
+            return [width, height];
+        };
+
+        const getFontRatio = () => {
+            const pre = document.createElement("pre");
+            pre.style.display = "inline";
+            pre.textContent = " ";
+
+            document.body.appendChild(pre);
+            const { width, height } = pre.getBoundingClientRect();
+            document.body.removeChild(pre);
+
+            return height / width;
+        };
+
+        const toGrayScale = (r, g, b) => 0.21 * r + 0.72 * g + 0.07 * b;
+
+        const convertToGrayScales = (context, width, height) => {
+            const imageData = context.getImageData(0, 0, width, height);
+
+            const grayScales = [];
+
+            for (let i = 0; i < imageData.data.length; i += 4) {
+                const r = imageData.data[i];
+                const g = imageData.data[i + 1];
+                const b = imageData.data[i + 2];
+
+                const grayScale = toGrayScale(r, g, b);
+                imageData.data[i] = imageData.data[i + 1] = imageData.data[
+                    i + 2
+                ] = grayScale;
+
+                grayScales.push(grayScale);
+            }
+
+            context.putImageData(imageData, 0, 0);
+
+            return grayScales;
+        };
+
+        const canvas = document.getElementById('preview');
+        const picture = document.getElementById('picture');
+        const ascii = document.getElementById('ascii');
+
+        const context = canvas.getContext('2d');
+
+        picture.onchange = (e) => {
+            const file = picture.files[0];
+            const fileReader = new FileReader();
+
+            fileReader.onload = (event) => {
+                const image = new Image();
+
+                image.onload = () => {
+                    const [width, height] = clampDimensions(image.width, image.height);
+
+                    canvas.width = width;
+                    canvas.height = height;
+
+                    context.drawImage(image, 0, 0, width, height);
+
+                    const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+
+                    const grayScales = [];
+
+                    for (let i = 0; i < imageData.data.length; i += 4) {
+                        const R = imageData.data[i];
+                        const G = imageData.data[i + 1];
+                        const B = imageData.data[i + 2];
+
+                        const grayScale = 0.21 * R + 0.72 * G + 0.07 * B;
+
+                        imageData.data[i] = imageData.data[i + 1] = imageData.data[i + 2] = grayScale;
+                        grayScales.push(grayScale);
+                    }
+
+                    context.putImageData(imageData, 0, 0);
+                    const grayRamp = "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/|()1{}[]?-_+~<>i!lI;:,\"    ";
+                    const rampLength = grayRamp.length;
+
+                    const asciiArt = grayScales.reduce((ascii, grayScale, index) => {
+                        return ascii + grayRamp[Math.ceil(((rampLength - 1) * grayScale) / 255)] + ((index + 1) % canvas.width === 0 ? "\n" : "")
+                    }, "")
+
+                    ascii.textContent = asciiArt;
+                }
+                image.src = event.target.result;
+            }
+
+            fileReader.readAsDataURL(file)
+
+        }
+    </script>
+</body>
+
+</html>
