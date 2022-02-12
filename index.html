@@ -53,8 +53,7 @@
             <div class="container my-12 mx-auto px-4 md:px-12">
                 <div class="flex flex-wrap -mx-1 lg:-mx-4">
                     <canvas id="preview" style="display: none;"></canvas>
-                    <pre id="ascii"></pre>
-
+                    <pre id="ascii" class="border-4"></pre>
                 </div>
             </div>
 
@@ -62,9 +61,15 @@
         </div>
     </div>
 
+    <footer class="p-6 dark:bg-coolGray-800 dark:text-coolGray-100">
+        <div class="flex items-center justify-center px-6 pt-12 text-sm">
+            <span class="dark:text-coolGray-400">Built by <a href="https://twitter.com/the2ndfloorguy" target="_blank" class="text-blue-900">Pankaj Tanwar</a></span>
+        </div>
+    </footer>
+
     <script>
-        const MAXIMUM_WIDTH = 100;
-        const MAXIMUM_HEIGHT = 100;
+        const MAXIMUM_WIDTH = 80;
+        const MAXIMUM_HEIGHT = 80;
 
         const clampDimensions = (width, height) => {
             const rectifiedWidth = Math.floor(getFontRatio() * width);
